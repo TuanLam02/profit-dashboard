@@ -1,6 +1,16 @@
 const DOMAIN = process.env.SHOPIFY_STORE_DOMAIN
 const API = `https://${DOMAIN}/admin/api/2024-01`
 
+function getPacificOffset(dateStr: string): string {
+  const d = new Date(`${dateStr}T12:00:00Z`)
+  const utc = new Date(d.toLocaleString('en-US', { timeZone: 'UTC' }))
+  const pac = new Date(d.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }))
+  const diff = Math.round((pac.getTime() - utc.getTime()) / 60000)
+  const sign = diff >= 0 ? '+' : '-'
+  const abs = Math.abs(diff)
+  return `${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`
+}
+
 async function getToken(): Promise<string> {
   // Dùng env var nếu có, không thì đọc từ Redis
   if (process.env.SHOPIFY_ADMIN_TOKEN) return process.env.SHOPIFY_ADMIN_TOKEN
@@ -38,8 +48,8 @@ export async function getOrders(dateStart: string, dateEnd: string): Promise<Sho
     status: 'any',
     financial_status: 'paid',
     limit: '250',
-    created_at_min: `${dateStart}T00:00:00+07:00`,
-    created_at_max: `${dateEnd}T23:59:59+07:00`,
+    created_at_min: `${dateStart}T00:00:00${getPacificOffset(dateStart)}`,
+    created_at_max: `${dateEnd}T23:59:59${getPacificOffset(dateEnd)}`,
   })
   const data = await shopifyFetch(`/orders.json?${params}`)
   return data.orders ?? []

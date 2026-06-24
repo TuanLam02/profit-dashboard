@@ -17,7 +17,7 @@ export function formatPercent(value: number) {
   return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`
 }
 
-const TZ = 'Asia/Ho_Chi_Minh'
+const TZ = 'America/Los_Angeles'
 
 export function todayISO() {
   return new Date().toLocaleDateString('en-CA', { timeZone: TZ })
