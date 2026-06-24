@@ -25,17 +25,25 @@ function writeFile(products: Product[]) {
   fs.writeFileSync(FILE, JSON.stringify(products, null, 2))
 }
 
-// ─── Vercel KV (production) ──────────────────────────────────────────────────
+// ─── Upstash Redis (production) ──────────────────────────────────────────────
+
+async function getRedis() {
+  const { Redis } = await import('@upstash/redis')
+  return new Redis({
+    url: process.env.KV_REST_API_URL!,
+    token: process.env.KV_REST_API_TOKEN!,
+  })
+}
 
 async function kvGet(): Promise<Product[]> {
-  const { kv } = await import('@vercel/kv')
-  const data = await kv.get<Product[]>('products')
+  const redis = await getRedis()
+  const data = await redis.get<Product[]>('products')
   return data ?? []
 }
 
 async function kvSet(products: Product[]) {
-  const { kv } = await import('@vercel/kv')
-  await kv.set('products', products)
+  const redis = await getRedis()
+  await redis.set('products', products)
 }
 
 // ─── Unified API ─────────────────────────────────────────────────────────────
