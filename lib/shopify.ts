@@ -38,8 +38,8 @@ export async function getOrders(dateStart: string, dateEnd: string): Promise<Sho
     status: 'any',
     financial_status: 'paid',
     limit: '250',
-    created_at_min: `${dateStart}T00:00:00`,
-    created_at_max: `${dateEnd}T23:59:59`,
+    created_at_min: `${dateStart}T00:00:00+07:00`,
+    created_at_max: `${dateEnd}T23:59:59+07:00`,
   })
   const data = await shopifyFetch(`/orders.json?${params}`)
   return data.orders ?? []

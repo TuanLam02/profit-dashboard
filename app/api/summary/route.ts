@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   for (const order of orders) {
     const price = parseFloat(order.total_price)
     revenue += price
-    const day = order.created_at.split('T')[0]
+    const day = new Date(order.created_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
     revenueByDay.set(day, (revenueByDay.get(day) || 0) + price)
     for (const item of order.line_items || []) {
       cogs += (cogMap.get(item.sku) || 0) * item.quantity

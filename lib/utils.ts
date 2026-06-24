@@ -17,12 +17,13 @@ export function formatPercent(value: number) {
   return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`
 }
 
+const TZ = 'Asia/Ho_Chi_Minh'
+
 export function todayISO() {
-  return new Date().toISOString().split('T')[0]
+  return new Date().toLocaleDateString('en-CA', { timeZone: TZ })
 }
 
 export function daysAgoISO(days: number) {
-  const d = new Date()
-  d.setDate(d.getDate() - days)
-  return d.toISOString().split('T')[0]
+  const d = new Date(Date.now() - days * 86400000)
+  return d.toLocaleDateString('en-CA', { timeZone: TZ })
 }
