@@ -30,9 +30,14 @@ export async function GET(req: NextRequest) {
         code,
       }),
     })
-    const data = await res.json()
-    token = data.access_token ?? ''
-    if (!token) errorMsg = JSON.stringify(data)
+    const text = await res.text()
+    try {
+      const data = JSON.parse(text)
+      token = data.access_token ?? ''
+      if (!token) errorMsg = `Shopify: ${JSON.stringify(data)}`
+    } catch {
+      errorMsg = `Shopify returned non-JSON (status ${res.status}): ${text.slice(0, 500)}`
+    }
   } catch (e) {
     errorMsg = String(e)
   }
@@ -43,7 +48,7 @@ export async function GET(req: NextRequest) {
         <h2 style="color:#f87171">❌ Lỗi lấy token</h2>
         <pre style="color:#fbbf24;background:#1e293b;padding:16px;border-radius:8px">${errorMsg}</pre>
       </body></html>`,
-      { headers: { 'Content-Type': 'text/html' }, status: 400 }
+      { headers: { 'Content-Type': 'text/html; charset=utf-8' }, status: 400 }
     )
   }
 
@@ -66,6 +71,6 @@ export async function GET(req: NextRequest) {
       </div>
       <a href="/" style="display:inline-block;margin-top:8px;padding:10px 20px;background:#6366f1;color:white;border-radius:8px;text-decoration:none">Về Dashboard</a>
     </body></html>`,
-    { headers: { 'Content-Type': 'text/html' } }
+    { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
   )
 }
