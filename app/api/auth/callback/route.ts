@@ -1,6 +1,4 @@
 import { NextRequest } from 'next/server'
-import fs from 'fs'
-import path from 'path'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -29,22 +27,24 @@ export async function GET(req: NextRequest) {
     return new Response(`Error: ${JSON.stringify(data)}`, { status: 400 })
   }
 
-  // Ghi token vào .env.local
-  const envPath = path.join(process.cwd(), '.env.local')
-  let envContent = fs.readFileSync(envPath, 'utf-8')
-  if (envContent.includes('SHOPIFY_ADMIN_TOKEN=')) {
-    envContent = envContent.replace(/SHOPIFY_ADMIN_TOKEN=.*/, `SHOPIFY_ADMIN_TOKEN=${token}`)
-  } else {
-    envContent += `\nSHOPIFY_ADMIN_TOKEN=${token}`
-  }
-  fs.writeFileSync(envPath, envContent)
+  // Lưu token vào Redis KV
+  const { Redis } = await import('@upstash/redis')
+  const redis = new Redis({
+    url: process.env.KV_REST_API_URL!,
+    token: process.env.KV_REST_API_TOKEN!,
+  })
+  await redis.set('shopify_token', token)
 
   return new Response(
-    `<html><body style="font-family:sans-serif;padding:40px;background:#0f172a;color:white">
+    `<html><body style="font-family:sans-serif;padding:40px;background:#0f172a;color:white;max-width:600px;margin:0 auto">
       <h2 style="color:#10b981">✓ Shopify kết nối thành công!</h2>
-      <p>Token đã được lưu vào .env.local</p>
-      <p style="color:#94a3b8">Token: <code>${token.slice(0, 12)}...</code></p>
-      <p>Hãy <strong>restart server</strong> (Ctrl+C rồi npm run dev) rồi vào <a href="/" style="color:#6366f1">Dashboard</a></p>
+      <p style="color:#94a3b8">Token đã được lưu vào database.</p>
+      <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;margin:20px 0">
+        <p style="color:#64748b;font-size:12px;margin:0 0 8px">SHOPIFY_ADMIN_TOKEN (copy vào Vercel env vars):</p>
+        <code style="color:#34d399;word-break:break-all;font-size:13px">${token}</code>
+      </div>
+      <p style="color:#94a3b8;font-size:14px">Để hoàn tất: Vào <strong>Vercel → Environment Variables</strong> → thêm <code>SHOPIFY_ADMIN_TOKEN</code> với giá trị trên → Redeploy.</p>
+      <a href="/" style="display:inline-block;margin-top:16px;padding:10px 20px;background:#6366f1;color:white;border-radius:8px;text-decoration:none">Về Dashboard</a>
     </body></html>`,
     { headers: { 'Content-Type': 'text/html' } }
   )
