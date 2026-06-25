@@ -8,21 +8,25 @@ export async function GET() {
 
   const headers = { Authorization: `Bearer ${token}` }
 
-  // Compare total count: no filter vs UserId=4 filter
-  const noFilter = await fetch('https://app.usadrop.com/api/Order/GetOrderList2', {
-    method: 'POST',
-    headers: { ...headers, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ CurrentPageIndex: 1, PageSize: 1, Keywords: '', Filter: { TabType: 1, UserId: '', SalesRecord: '', CustomerPayment: '' } }),
-  }).then(r => r.json())
+  // Search USADROP JS bundle for login endpoint
+  const html = await fetch('https://app.usadrop.com/').then(r => r.text()).catch(() => '')
 
-  const withFilter = await fetch('https://app.usadrop.com/api/Order/GetOrderList2', {
-    method: 'POST',
-    headers: { ...headers, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ CurrentPageIndex: 1, PageSize: 1, Keywords: '', Filter: { TabType: 1, UserId: '4', SalesRecord: '', CustomerPayment: '' } }),
-  }).then(r => r.json())
+  // Find JS bundle URLs
+  const jsUrls = [...html.matchAll(/src="([^"]*\.js[^"]*)"/g)].map(m => m[1])
+    .filter(u => u.includes('chunk') || u.includes('app'))
+    .map(u => u.startsWith('http') ? u : `https://app.usadrop.com${u}`)
+    .slice(0, 3)
 
-  return Response.json({
-    noFilter: { total: noFilter?.TotalCount, first: noFilter?.Items?.[0]?.SalesRecord },
-    withFilter: { total: withFilter?.TotalCount, first: withFilter?.Items?.[0]?.SalesRecord },
-  })
+  const loginMatches: string[] = []
+  for (const url of jsUrls) {
+    const js = await fetch(url).then(r => r.text()).catch(() => '')
+    // Search for login-related API paths
+    const matches = [...js.matchAll(/["'`]([^"'`]*[Ll]ogin[^"'`]*)["'`]/g)]
+      .map(m => m[1])
+      .filter(s => s.includes('/api/') || s.includes('Member') || s.includes('Auth'))
+      .slice(0, 10)
+    loginMatches.push(...matches)
+  }
+
+  return Response.json({ jsUrls, loginMatches: [...new Set(loginMatches)] })
 }
