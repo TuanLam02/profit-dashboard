@@ -6,6 +6,7 @@ import ProfitChart from '@/components/ProfitChart'
 import ProductsTable from '@/components/ProductsTable'
 import SyncButton from '@/components/SyncButton'
 import UsadropImport from '@/components/UsadropImport'
+import UsadropSyncButton from '@/components/UsadropSyncButton'
 import { formatCurrency, todayISO, daysAgoISO } from '@/lib/utils'
 
 type Summary = {
@@ -130,6 +131,7 @@ export default function Dashboard() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {lastRefreshed && <span style={{ fontSize: 12, color: '#64748b' }}>Updated: {lastRefreshed}</span>}
+            <UsadropSyncButton />
             <SyncButton loading={loading} onRefresh={() => { fetchSummary(); setLastRefreshed(new Date().toLocaleTimeString()) }} />
           </div>
         </div>
