@@ -5,6 +5,7 @@ import MetricCard from '@/components/MetricCard'
 import ProfitChart from '@/components/ProfitChart'
 import ProductsTable from '@/components/ProductsTable'
 import SyncButton from '@/components/SyncButton'
+import UsadropImport from '@/components/UsadropImport'
 import { formatCurrency, todayISO, daysAgoISO } from '@/lib/utils'
 
 type Summary = {
@@ -227,36 +228,36 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* COGs CSV Tab */}
+        {/* COGs / USADROP Tab */}
         {tab === 'cogs' && (
           <div style={card}>
-            <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>Bulk Import COGs từ USADROP</h2>
-            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
-              Paste CSV xuất từ USADROP. Format mỗi dòng: <code style={{ color: '#94a3b8', background: 'rgba(255,255,255,0.05)', padding: '1px 6px', borderRadius: 4 }}>sku,name,cog_price</code>
+            <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>Import COGs từ USADROP</h2>
+            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
+              Export file Excel từ USADROP → upload vào đây → hệ thống tự tính cost từng đơn hàng.
             </p>
 
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: '10px 14px', fontFamily: 'monospace', fontSize: 12, color: '#64748b', marginBottom: 16, lineHeight: 1.8 }}>
-              sku,name,cog_price<br />
-              SKU-001,Blue Widget,12.50<br />
-              SKU-002,Red Widget,8.99
-            </div>
+            <UsadropImport />
 
-            <form onSubmit={handleCsvUpload} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <textarea
-                className="input-dark"
-                rows={10}
-                placeholder="Paste CSV here..."
-                value={csvText}
-                onChange={(e) => setCsvText(e.target.value)}
-                style={{ fontFamily: 'monospace', fontSize: 12, resize: 'vertical', width: '100%' }}
-              />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <button type="submit" disabled={csvLoading || !csvText} style={{ background: '#6366f1', borderRadius: 8, padding: '8px 20px', fontSize: 14, color: 'white', border: 'none', cursor: 'pointer', opacity: csvLoading || !csvText ? 0.5 : 1 }}>
-                  {csvLoading ? 'Importing…' : 'Import CSV'}
-                </button>
-                {csvResult && <span style={{ fontSize: 13, color: csvResult.startsWith('✓') ? '#34d399' : '#f87171' }}>{csvResult}</span>}
-              </div>
-            </form>
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: 28, paddingTop: 24 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Backup: Nhập giá theo SKU</h3>
+              <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>Dùng khi đơn hàng chưa có trong USADROP export.</p>
+              <form onSubmit={handleCsvUpload} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <textarea
+                  className="input-dark"
+                  rows={6}
+                  placeholder={'sku,name,cog_price\nSKU-001,Product A,12.50'}
+                  value={csvText}
+                  onChange={(e) => setCsvText(e.target.value)}
+                  style={{ fontFamily: 'monospace', fontSize: 12, resize: 'vertical', width: '100%' }}
+                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <button type="submit" disabled={csvLoading || !csvText} style={{ background: '#475569', borderRadius: 8, padding: '8px 20px', fontSize: 14, color: 'white', border: 'none', cursor: 'pointer', opacity: csvLoading || !csvText ? 0.5 : 1 }}>
+                    {csvLoading ? 'Importing…' : 'Import CSV'}
+                  </button>
+                  {csvResult && <span style={{ fontSize: 13, color: csvResult.startsWith('✓') ? '#34d399' : '#f87171' }}>{csvResult}</span>}
+                </div>
+              </form>
+            </div>
           </div>
         )}
       </main>

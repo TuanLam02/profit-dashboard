@@ -3,6 +3,7 @@ import { getOrders } from '@/lib/shopify'
 import { getAdSpend, getDailyAdSpend } from '@/lib/meta'
 import { getCogMap } from '@/lib/products'
 import { todayISO } from '@/lib/utils'
+import { Redis } from '@upstash/redis'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -10,9 +11,11 @@ export async function GET(req: NextRequest) {
   const dateEnd = searchParams.get('end') || todayISO()
   const paymentFee = parseFloat(searchParams.get('fee') || '0') / 100
 
-  const cogMap = await getCogMap()
+  const redis = new Redis({ url: process.env.KV_REST_API_URL!, token: process.env.KV_REST_API_TOKEN! })
 
-  const [orders, adSummary, dailyAds] = await Promise.all([
+  const [cogMap, usadropCosts, orders, adSummary, dailyAds] = await Promise.all([
+    getCogMap(),
+    redis.get<Record<string, number>>('usadrop_costs').then((v) => v ?? {}),
     getOrders(dateStart, dateEnd),
     getAdSpend(dateStart, dateEnd),
     getDailyAdSpend(dateStart, dateEnd),
@@ -21,14 +24,26 @@ export async function GET(req: NextRequest) {
   let revenue = 0
   let cogs = 0
   const revenueByDay = new Map<string, number>()
+  const cogsByDay = new Map<string, number>()
 
   for (const order of orders) {
     const price = parseFloat(order.total_price)
     revenue += price
     const day = new Date(order.created_at).toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' })
     revenueByDay.set(day, (revenueByDay.get(day) || 0) + price)
-    for (const item of order.line_items || []) {
-      cogs += (cogMap.get(item.sku) || 0) * item.quantity
+
+    // Use USADROP exact cost if available, otherwise fall back to SKU-based
+    const orderName = order.name // e.g. "#1215"
+    if (usadropCosts[orderName] !== undefined) {
+      const cost = usadropCosts[orderName]
+      cogs += cost
+      cogsByDay.set(day, (cogsByDay.get(day) || 0) + cost)
+    } else {
+      for (const item of order.line_items || []) {
+        const cost = (cogMap.get(item.sku) || 0) * item.quantity
+        cogs += cost
+        cogsByDay.set(day, (cogsByDay.get(day) || 0) + cost)
+      }
     }
   }
 
@@ -53,7 +68,8 @@ export async function GET(req: NextRequest) {
     .map((date) => {
       const rev = revenueByDay.get(date) || 0
       const spend = parseFloat(dailyAds.find((d) => d.date_start === date)?.spend || '0')
-      return { date, revenue: rev, adSpend: spend, profit: rev - spend }
+      const cog = cogsByDay.get(date) || 0
+      return { date, revenue: rev, adSpend: spend, profit: rev - spend - cog }
     })
 
   return Response.json({
