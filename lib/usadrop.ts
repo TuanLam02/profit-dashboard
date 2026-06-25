@@ -50,10 +50,12 @@ async function fetchPage(token: string, page: number, pageSize: number) {
   return (data?.Items ?? []) as Record<string, unknown>[]
 }
 
+export type UsadropEntry = { cost: number; name: string }
+
 export async function syncUsadropOrders(): Promise<{ synced: number; total: number }> {
   let token = await getToken()
 
-  const existing = (await redis.get<Record<string, number>>('usadrop_costs')) ?? {}
+  const existing = (await redis.get<Record<string, UsadropEntry>>('usadrop_costs')) ?? {}
   const PAGE_SIZE = 200
   let page = 1
   let synced = 0
@@ -63,7 +65,6 @@ export async function syncUsadropOrders(): Promise<{ synced: number; total: numb
     try {
       items = await fetchPage(token, page, PAGE_SIZE)
     } catch {
-      // Token expired — re-login once
       token = await login()
       items = await fetchPage(token, page, PAGE_SIZE)
     }
@@ -72,10 +73,10 @@ export async function syncUsadropOrders(): Promise<{ synced: number; total: numb
 
     for (const order of items) {
       const orderNo = String(order.OrderNo ?? '').trim()
+      const name = String(order.SalesRecord ?? '').trim()
       const cost = parseFloat(String(order.QuotedPrice ?? '0'))
-      // Key by Shopify numeric order ID — globally unique, no collision between stores
       if (orderNo && cost > 0) {
-        existing[orderNo] = cost
+        existing[orderNo] = { cost, name }
         synced++
       }
     }

@@ -7,6 +7,7 @@ import ProductsTable from '@/components/ProductsTable'
 import SyncButton from '@/components/SyncButton'
 import UsadropImport from '@/components/UsadropImport'
 import UsadropSyncButton from '@/components/UsadropSyncButton'
+import UsadropCostsTable from '@/components/UsadropCostsTable'
 import { formatCurrency, todayISO, daysAgoISO } from '@/lib/utils'
 
 type Summary = {
@@ -232,6 +233,7 @@ export default function Dashboard() {
 
         {/* COGs / USADROP Tab */}
         {tab === 'cogs' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           <div style={card}>
             <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>Import COGs từ USADROP</h2>
             <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
@@ -260,6 +262,9 @@ export default function Dashboard() {
                 </div>
               </form>
             </div>
+          </div>
+
+          <UsadropCostsTable />
           </div>
         )}
       </main>
