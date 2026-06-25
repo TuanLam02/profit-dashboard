@@ -32,10 +32,10 @@ export async function GET(req: NextRequest) {
     const day = new Date(order.created_at).toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' })
     revenueByDay.set(day, (revenueByDay.get(day) || 0) + price)
 
-    // Use USADROP exact cost if available, otherwise fall back to SKU-based
-    const orderName = order.name // e.g. "#1215"
-    if (usadropCosts[orderName] !== undefined) {
-      const cost = usadropCosts[orderName]
+    // Look up by Shopify numeric order ID — matches USADROP OrderNo, unique across stores
+    const usadropKey = String(order.id)
+    if (usadropCosts[usadropKey] !== undefined) {
+      const cost = usadropCosts[usadropKey]
       cogs += cost
       cogsByDay.set(day, (cogsByDay.get(day) || 0) + cost)
     } else {

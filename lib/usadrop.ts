@@ -69,10 +69,11 @@ export async function syncUsadropOrders(): Promise<{ synced: number; total: numb
     if (!items.length) break
 
     for (const order of items) {
-      const salesRecord = String(order.SalesRecord ?? '').trim()
+      const orderNo = String(order.OrderNo ?? '').trim()
       const cost = parseFloat(String(order.QuotedPrice ?? '0'))
-      if (salesRecord.startsWith('#') && cost > 0) {
-        existing[salesRecord] = cost
+      // Key by Shopify numeric order ID — globally unique, no collision between stores
+      if (orderNo && cost > 0) {
+        existing[orderNo] = cost
         synced++
       }
     }
