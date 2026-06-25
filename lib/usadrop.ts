@@ -9,7 +9,7 @@ async function login(): Promise<string> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      UserName: process.env.USADROP_EMAIL,
+      Account: process.env.USADROP_EMAIL,
       Password: process.env.USADROP_PASSWORD,
     }),
   })
@@ -18,8 +18,9 @@ async function login(): Promise<string> {
   let data: any
   try { data = JSON.parse(text) } catch { throw new Error(`USADROP login non-JSON (${res.status}): ${text.slice(0, 200)}`) }
 
-  const token: string = data?.Token ?? data?.Data?.Token ?? data?.token ?? data?.access_token ?? ''
-  const refresh: string = data?.RefreshToken ?? data?.refresh_token ?? ''
+  // Response: { code, success, data: { token, refreshToken, ... } }
+  const token: string = data?.data?.token ?? data?.data?.Token ?? data?.Token ?? data?.Data?.Token ?? data?.token ?? ''
+  const refresh: string = data?.data?.refreshToken ?? data?.data?.RefreshToken ?? data?.RefreshToken ?? data?.refresh_token ?? ''
   if (!token) throw new Error(`USADROP login no token. Response: ${text.slice(0, 300)}`)
 
   await Promise.all([
