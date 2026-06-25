@@ -1,20 +1,17 @@
 export async function GET() {
-  // Search app.chunk for all webapi.usadrop.com paths
-  const js = await fetch('https://app.usadrop.com/js/app.chunk.1782214963872.js')
-    .then(r => r.text()).catch(() => '')
+  const creds = { UserName: process.env.USADROP_EMAIL, Password: process.env.USADROP_PASSWORD }
 
-  const webapiPaths = [...js.matchAll(/["'`]((?:https:\/\/webapi\.usadrop\.com)?\/api\/[^"'`\s]{3,60})["'`]/g)]
-    .map(m => m[1])
-    .filter((v, i, a) => a.indexOf(v) === i)
-    .sort()
+  const [r1, r2] = await Promise.all([
+    fetch('https://webapi.usadrop.com/api/Login/GetJwtToken', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(creds),
+    }),
+    fetch('https://webapi.usadrop.com/api/Login/NyToken', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(creds),
+    }),
+  ])
 
-  // Also try getAuthBack
-  const res = await fetch('https://webapi.usadrop.com/api/Login/getAuthBack', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ UserName: process.env.USADROP_EMAIL, Password: process.env.USADROP_PASSWORD }),
+  return Response.json({
+    GetJwtToken: { status: r1.status, body: (await r1.text()).slice(0, 400) },
+    NyToken: { status: r2.status, body: (await r2.text()).slice(0, 400) },
   })
-  const text = await res.text()
-
-  return Response.json({ getAuthBack: { status: res.status, body: text.slice(0, 300) }, webapiPaths })
 }

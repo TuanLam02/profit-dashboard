@@ -5,7 +5,7 @@ const AUTH = 'https://webapi.usadrop.com/api/Login'
 const redis = new Redis({ url: process.env.KV_REST_API_URL!, token: process.env.KV_REST_API_TOKEN! })
 
 async function login(): Promise<string> {
-  const res = await fetch(`${AUTH}/getAuthorization`, {
+  const res = await fetch(`${AUTH}/GetJwtToken`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
