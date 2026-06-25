@@ -12,10 +12,15 @@ async function login(): Promise<string> {
       Password: process.env.USADROP_PASSWORD,
     }),
   })
-  const data = await res.json()
-  const token: string = data?.Data?.Token ?? data?.token ?? ''
-  if (!token) throw new Error(`USADROP login failed: ${JSON.stringify(data)}`)
-  await redis.set('usadrop_jwt', token, { ex: 3500 }) // cache ~1h
+  const text = await res.text()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let data: any
+  try { data = JSON.parse(text) } catch { throw new Error(`USADROP login non-JSON: ${text.slice(0, 200)}`) }
+
+  // Response format: { Success, Token, RefreshToken, ExpiresIn, ... }
+  const token: string = data?.Token ?? data?.Data?.Token ?? data?.token ?? ''
+  if (!token) throw new Error(`USADROP login no token. Response: ${text.slice(0, 300)}`)
+  await redis.set('usadrop_jwt', token, { ex: 3500 })
   return token
 }
 

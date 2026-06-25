@@ -15,8 +15,7 @@ export default function UsadropSyncButton() {
       if (data.ok) {
         setResult(`✓ ${data.synced} đơn`)
       } else {
-        setResult('✗ Lỗi')
-        console.error(data.error)
+        setResult(`✗ ${data.error?.slice(0, 60) ?? 'Lỗi'}`)
       }
     } catch {
       setResult('✗ Lỗi')
