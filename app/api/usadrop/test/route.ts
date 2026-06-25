@@ -8,30 +8,21 @@ export async function GET() {
 
   const headers = { Authorization: `Bearer ${token}` }
 
-  const filterVariants = [
-    { TabType: 1, UserId: '', SalesRecord: '', CustomerPayment: '' },
-    { TabType: 1, UserId: '4', SalesRecord: '', CustomerPayment: '' },
-    { TabType: 1, StoreId: 4, UserId: '', SalesRecord: '', CustomerPayment: '' },
-    { TabType: 1, ShopId: 4, UserId: '', SalesRecord: '', CustomerPayment: '' },
-    { TabType: 1, ShopName: 'fb90ru-ks', UserId: '', SalesRecord: '', CustomerPayment: '' },
-  ]
+  // Compare total count: no filter vs UserId=4 filter
+  const noFilter = await fetch('https://app.usadrop.com/api/Order/GetOrderList2', {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ CurrentPageIndex: 1, PageSize: 1, Keywords: '', Filter: { TabType: 1, UserId: '', SalesRecord: '', CustomerPayment: '' } }),
+  }).then(r => r.json())
 
-  const results = []
-  for (const filter of filterVariants) {
-    const res = await fetch('https://app.usadrop.com/api/Order/GetOrderList2', {
-      method: 'POST',
-      headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ CurrentPageIndex: 1, PageSize: 3, Keywords: '', Filter: filter }),
-    })
-    const data = await res.json()
-    results.push({
-      filter,
-      status: res.status,
-      totalCount: data?.TotalCount ?? data?.Total,
-      firstOrder: data?.Items?.[0]
-        ? { OrderNo: data.Items[0].OrderNo, SalesRecord: data.Items[0].SalesRecord }
-        : null,
-    })
-  }
-  return Response.json({ results })
+  const withFilter = await fetch('https://app.usadrop.com/api/Order/GetOrderList2', {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ CurrentPageIndex: 1, PageSize: 1, Keywords: '', Filter: { TabType: 1, UserId: '4', SalesRecord: '', CustomerPayment: '' } }),
+  }).then(r => r.json())
+
+  return Response.json({
+    noFilter: { total: noFilter?.TotalCount, first: noFilter?.Items?.[0]?.SalesRecord },
+    withFilter: { total: withFilter?.TotalCount, first: withFilter?.Items?.[0]?.SalesRecord },
+  })
 }
