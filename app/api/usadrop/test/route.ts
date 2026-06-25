@@ -8,30 +8,30 @@ export async function GET() {
 
   const headers = { Authorization: `Bearer ${token}` }
 
-  // Try GetOrderList2 with UserId filter for fb90ru-ks
-  const res = await fetch('https://app.usadrop.com/api/Order/GetOrderList2', {
-    method: 'POST',
-    headers: { ...headers, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      CurrentPageIndex: 1,
-      PageSize: 5,
-      Keywords: '',
-      Filter: {
-        TabType: 1,
-        UserId: 'Shopify835651c6fb574905b9fd9d74d7ae2214',
-        SalesRecord: '',
-        CustomerPayment: '',
-      },
-    }),
-  })
-  const data = await res.json()
-  return Response.json({
-    status: res.status,
-    totalCount: data?.TotalCount,
-    items: (data?.Items ?? []).slice(0, 3).map((o: Record<string, unknown>) => ({
-      OrderNo: o.OrderNo,
-      SalesRecord: o.SalesRecord,
-      QuotedPrice: o.QuotedPrice,
-    })),
-  })
+  const filterVariants = [
+    { TabType: 1, UserId: '', SalesRecord: '', CustomerPayment: '' },
+    { TabType: 1, UserId: '4', SalesRecord: '', CustomerPayment: '' },
+    { TabType: 1, StoreId: 4, UserId: '', SalesRecord: '', CustomerPayment: '' },
+    { TabType: 1, ShopId: 4, UserId: '', SalesRecord: '', CustomerPayment: '' },
+    { TabType: 1, ShopName: 'fb90ru-ks', UserId: '', SalesRecord: '', CustomerPayment: '' },
+  ]
+
+  const results = []
+  for (const filter of filterVariants) {
+    const res = await fetch('https://app.usadrop.com/api/Order/GetOrderList2', {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ CurrentPageIndex: 1, PageSize: 3, Keywords: '', Filter: filter }),
+    })
+    const data = await res.json()
+    results.push({
+      filter,
+      status: res.status,
+      totalCount: data?.TotalCount ?? data?.Total,
+      firstOrder: data?.Items?.[0]
+        ? { OrderNo: data.Items[0].OrderNo, SalesRecord: data.Items[0].SalesRecord }
+        : null,
+    })
+  }
+  return Response.json({ results })
 }
