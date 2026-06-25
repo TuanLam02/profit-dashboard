@@ -1,10 +1,11 @@
 import { Redis } from '@upstash/redis'
 
 const BASE = 'https://app.usadrop.com/api'
+const AUTH = 'https://webapi.usadrop.com/api/Login'
 const redis = new Redis({ url: process.env.KV_REST_API_URL!, token: process.env.KV_REST_API_TOKEN! })
 
 async function login(): Promise<string> {
-  const res = await fetch(`${BASE}/Member/Login`, {
+  const res = await fetch(`${AUTH}/getAuthorization`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -15,11 +16,36 @@ async function login(): Promise<string> {
   const text = await res.text()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let data: any
-  try { data = JSON.parse(text) } catch { throw new Error(`USADROP login non-JSON: ${text.slice(0, 200)}`) }
+  try { data = JSON.parse(text) } catch { throw new Error(`USADROP login non-JSON (${res.status}): ${text.slice(0, 200)}`) }
 
-  // Response format: { Success, Token, RefreshToken, ExpiresIn, ... }
-  const token: string = data?.Token ?? data?.Data?.Token ?? data?.token ?? ''
+  const token: string = data?.Token ?? data?.Data?.Token ?? data?.token ?? data?.access_token ?? ''
+  const refresh: string = data?.RefreshToken ?? data?.refresh_token ?? ''
   if (!token) throw new Error(`USADROP login no token. Response: ${text.slice(0, 300)}`)
+
+  await Promise.all([
+    redis.set('usadrop_jwt', token, { ex: 3500 }),
+    refresh ? redis.set('usadrop_refresh', refresh, { ex: 86400 * 7 }) : Promise.resolve(),
+  ])
+  return token
+}
+
+async function refreshToken(): Promise<string> {
+  const refresh = await redis.get<string>('usadrop_refresh')
+  if (!refresh) return login()
+
+  const res = await fetch(`${AUTH}/RefreshToken`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ RefreshToken: refresh }),
+  })
+  const text = await res.text()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let data: any
+  try { data = JSON.parse(text) } catch { return login() }
+
+  const token: string = data?.Token ?? data?.access_token ?? ''
+  if (!token) return login()
+
   await redis.set('usadrop_jwt', token, { ex: 3500 })
   return token
 }
@@ -27,7 +53,8 @@ async function login(): Promise<string> {
 async function getToken(): Promise<string> {
   const cached = await redis.get<string>('usadrop_jwt')
   if (cached) return cached
-  return login()
+  // Try refresh first, fall back to full login
+  return refreshToken()
 }
 
 async function fetchPage(token: string, page: number, pageSize: number) {
