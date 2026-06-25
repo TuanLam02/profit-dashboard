@@ -31,6 +31,8 @@ async function getToken(): Promise<string> {
 }
 
 async function fetchPage(token: string, page: number, pageSize: number) {
+  // UserId "4" = StoreId of fb90ru-ks — filters to only this store's orders
+  const storeId = process.env.USADROP_STORE_ID ?? '4'
   const res = await fetch(`${BASE}/Order/GetOrderList2`, {
     method: 'POST',
     headers: {
@@ -41,7 +43,7 @@ async function fetchPage(token: string, page: number, pageSize: number) {
       CurrentPageIndex: page,
       PageSize: pageSize,
       Keywords: '',
-      Filter: { TabType: 1, UserId: '', SalesRecord: '', CustomerPayment: '' },
+      Filter: { TabType: 1, UserId: storeId, SalesRecord: '', CustomerPayment: '' },
     }),
   })
   const data = await res.json()
