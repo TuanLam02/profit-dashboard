@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import MetricCard from '@/components/MetricCard'
 import ProfitChart from '@/components/ProfitChart'
 import ProductsTable from '@/components/ProductsTable'
@@ -37,6 +38,14 @@ const PRESETS = [
 ]
 
 export default function Dashboard() {
+  const router = useRouter()
+
+  async function handleLogout() {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    router.push('/login')
+    router.refresh()
+  }
+
   const [dateStart, setDateStart] = useState(todayISO())
   const [dateEnd, setDateEnd] = useState(todayISO())
   const [paymentFee, setPaymentFee] = useState('3')
@@ -134,6 +143,10 @@ export default function Dashboard() {
             {lastRefreshed && <span style={{ fontSize: 12, color: '#64748b' }}>Updated: {lastRefreshed}</span>}
             <UsadropSyncButton />
             <SyncButton loading={loading} onRefresh={() => { fetchSummary(); setLastRefreshed(new Date().toLocaleTimeString()) }} />
+            <button onClick={handleLogout} title="Logout" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#64748b', fontSize: 13, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.color = '#f87171'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.3)' }} onMouseLeave={e => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Logout
+            </button>
           </div>
         </div>
       </header>
