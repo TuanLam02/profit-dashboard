@@ -9,7 +9,7 @@ async function login(): Promise<string> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      Account: process.env.USADROP_EMAIL,
+      email: process.env.USADROP_EMAIL,
       Password: process.env.USADROP_PASSWORD,
     }),
   })
