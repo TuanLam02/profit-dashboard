@@ -90,7 +90,8 @@ export type UsadropEntry = { cost: number; name: string }
 export async function syncUsadropOrders(): Promise<{ synced: number; total: number }> {
   let token = await getToken()
 
-  const existing = (await redis.get<Record<string, UsadropEntry>>('usadrop_costs')) ?? {}
+  // Always start fresh so only the filtered store's orders are kept
+  const existing: Record<string, UsadropEntry> = {}
   const PAGE_SIZE = 200
   let page = 1
   let synced = 0
