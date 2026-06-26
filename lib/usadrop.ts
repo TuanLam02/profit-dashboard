@@ -43,7 +43,7 @@ async function refreshToken(): Promise<string> {
 
   const res = await fetch(`${AUTH}/RefreshToken`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: LOGIN_HEADERS,
     body: JSON.stringify({ RefreshToken: refresh }),
   })
   const text = await res.text()
