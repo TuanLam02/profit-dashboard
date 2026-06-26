@@ -4,13 +4,20 @@ const BASE = 'https://app.usadrop.com/api'
 const AUTH = 'https://webapi.usadrop.com/api/Login'
 const redis = new Redis({ url: process.env.KV_REST_API_URL!, token: process.env.KV_REST_API_TOKEN! })
 
+const LOGIN_HEADERS = {
+  'Content-Type': 'application/json',
+  'Origin': 'https://app.usadrop.com',
+  'Referer': 'https://app.usadrop.com/',
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+}
+
 async function login(): Promise<string> {
   const res = await fetch(`${AUTH}/GetJwtToken`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: LOGIN_HEADERS,
     body: JSON.stringify({
       email: process.env.USADROP_EMAIL,
-      Password: process.env.USADROP_PASSWORD,
+      pwd: process.env.USADROP_PASSWORD,
     }),
   })
   const text = await res.text()
@@ -18,7 +25,7 @@ async function login(): Promise<string> {
   let data: any
   try { data = JSON.parse(text) } catch { throw new Error(`USADROP login non-JSON (${res.status}): ${text.slice(0, 200)}`) }
 
-  // Response: { code, success, data: { token, refreshToken, ... } }
+  // Response: { code: "200", data: { token, refreshToken, ... } }
   const token: string = data?.data?.token ?? data?.data?.Token ?? data?.Token ?? data?.Data?.Token ?? data?.token ?? ''
   const refresh: string = data?.data?.refreshToken ?? data?.data?.RefreshToken ?? data?.RefreshToken ?? data?.refresh_token ?? ''
   if (!token) throw new Error(`USADROP login no token. Response: ${text.slice(0, 300)}`)
