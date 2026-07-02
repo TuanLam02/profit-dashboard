@@ -48,7 +48,7 @@ export default function Dashboard() {
 
   const [dateStart, setDateStart] = useState(todayISO())
   const [dateEnd, setDateEnd] = useState(todayISO())
-  const [paymentFee, setPaymentFee] = useState('3')
+  const [paymentFee, setPaymentFee] = useState('6')
   const [activePreset, setActivePreset] = useState('Today')
   const [summary, setSummary] = useState<Summary | null>(null)
   const [products, setProducts] = useState<Product[]>([])
